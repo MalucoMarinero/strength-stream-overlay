@@ -2,5 +2,10 @@
   "src": {
     "type": "native-json",
     "url": "./competition.json"
+  },
+  "upcoming": {
+    "title": "Upcoming",
+    "count": 6,
+    "current_title": "Current Lifter"
   }
 }

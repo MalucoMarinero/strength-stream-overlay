@@ -9,7 +9,7 @@ const customProperties = require("postcss-custom-properties")
 const { src } = anathema.config.paths
 const projectName = anathema.config.projectName
 
-anathema.watcher("styles", "lib/**/*.less", ["styles"], {
+anathema.watcher("styles", "src/**/*.less", ["styles"], {
   runOnStart: true,
 })
 anathema.task("styles", function(task) {

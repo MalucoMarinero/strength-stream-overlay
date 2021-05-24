@@ -1,9 +1,37 @@
+import deepDiff from 'deep-diff'
+
+export interface Config {
+  src: {
+    type: string
+    url?: string
+  }
+  upcoming: {
+    title: string
+    count: number
+    current_title: string
+  }
+}
+
+export enum CompetitionEventType {
+  SuccessfulLift,
+  FailedLift,
+  DeclarationChange,
+}
+
+export interface CompetitionEvent {
+  event_type: CompetitionEventType
+  expiry: number
+  data: any
+}
+
 export enum AttemptStatus {
   Nil = "nil",
   Declared = "declared",
   Success = "success",
+  Pass = "pass",
   Fail = "fail",
 }
+
 
 
 export interface Attempt {
@@ -29,30 +57,90 @@ export interface LiftOrderLine {
   lot: number
   name: string
   team: string
-  attemptNumber: number
-  attemptWeight: number
+  scoredWeight?: number
+  attemptNumber?: number
+  attemptWeight?: number
   attempts: Array<Attempt>
 }
 
-export function getLifterOrder(data: CompetitionData): LiftOrderLine[] {
-  const lines = Object.keys(data.scorecard).map((lotKey) => {
-    const line = data.scorecard[lotKey]
-    const attempts = line.phases[data.competition_phase]
-    const attemptNumber = attempts.filter((attempt) => attempt.status != AttemptStatus.Nil).length
-    const attemptWeight = Math.max(
-      ...attempts.filter((attempt) => attempt.status != AttemptStatus.Nil).map(a => a.weight)
-    )
-    const liftLine: LiftOrderLine = {
-      lot: line.lot,
-      name: line.name,
-      team: line.team,
-      attempts: attempts,
-      attemptNumber,
-      attemptWeight,
-    }
+export function getEventsFromDiff(before: CompetitionData, after: CompetitionData, timestamp: number) {
+  const events: CompetitionEvent[] = []
+  const diff = deepDiff.diff(before, after)
 
-    return liftLine
-  })
+  if (diff) {
+    diff.forEach((change: any) => {
+      if (change.path && change.path[change.path.length - 1] == "weight") {
+        if (change.lhs && change.rhs) {
+          events.push({
+            event_type: CompetitionEventType.DeclarationChange,
+            data: {
+              lotKey: change.path[1],
+              previousWeight: change.lhs,
+              newWeight: change.rhs,
+            },
+            expiry: timestamp + 5000,
+          })
+        }
+      }
+      if (change.lhs == "declared" && change.rhs == "success") {
+        events.push({
+          event_type: CompetitionEventType.SuccessfulLift,
+          data: {
+            lotKey: change.path[1],
+            competitionPhase: change.path[3],
+            attempt: change.path[4],
+          },
+          expiry: timestamp + 5000,
+        })
+      }
+      if (change.lhs == "declared" && change.rhs == "fail") {
+        events.push({
+          event_type: CompetitionEventType.FailedLift,
+          data: {
+            lotKey: change.path[1],
+            competitionPhase: change.path[3],
+            attempt: change.path[4],
+          },
+          expiry: timestamp + 5000,
+        })
+      }
+    })
+  }
+
+  return events
+}
+
+export function getLifterOrder(data: CompetitionData): LiftOrderLine[] {
+  const lines = Object.keys(data.scorecard)
+    .map((lotKey) => data.scorecard[lotKey])
+    .filter((line) => {
+      const attempts = line.phases[data.competition_phase]
+      return attempts.filter((attempt) => attempt.status == AttemptStatus.Declared).length > 0
+    })
+    .map(line => {
+      const attempts = line.phases[data.competition_phase]
+      let scoredWeight = 0
+      attempts.forEach((a) => {
+        if (a.status == AttemptStatus.Success && a.weight > scoredWeight) {
+          scoredWeight = a.weight
+        }
+      })
+      const attemptNumber = attempts.filter((attempt) => attempt.status != AttemptStatus.Nil).length
+      const attemptWeight = Math.max(
+        ...attempts.filter((attempt) => attempt.status != AttemptStatus.Nil).map(a => a.weight)
+      )
+      const liftLine: LiftOrderLine = {
+        lot: line.lot,
+        name: line.name,
+        team: line.team,
+        attempts: attempts,
+        scoredWeight,
+        attemptNumber,
+        attemptWeight,
+      }
+
+      return liftLine
+    })
 
   lines.sort((a, b) => {
     if (a.attemptWeight != b.attemptWeight) {
