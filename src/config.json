@@ -1,0 +1,6 @@
+{
+  "src": {
+    "type": "native-json",
+    "url": "./competition.json"
+  }
+}

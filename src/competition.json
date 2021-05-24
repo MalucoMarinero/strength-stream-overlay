@@ -1,0 +1,40 @@
+{
+  "clock": "1:29",
+  "competition_phase": "snatch",
+  "scorecard": {
+    "1": {
+      "lot": 1,
+      "name": "James Rakich",
+      "team": "LVST",
+      "phases": {
+        "snatch": [
+          {"weight": 58, "status": "success"},
+          {"weight": 62, "status": "fail"},
+          {"weight": 66, "status": "declared"}
+        ],
+        "clean": [
+          {"weight": 80, "status": "declared"},
+          {"weight": null, "status": "nil"},
+          {"weight": null, "status": "nil"}
+        ]
+      }
+    },
+    "2": {
+      "lot": 2,
+      "name": "Some person",
+      "team": "GTT",
+      "phases": {
+        "snatch": [
+          {"weight": 62, "status": "success"},
+          {"weight": 65, "status": "fail"},
+          {"weight": 69, "status": "declared"}
+        ],
+        "clean": [
+          {"weight": 80, "status": "declared"},
+          {"weight": null, "status": "nil"},
+          {"weight": null, "status": "nil"}
+        ]
+      }
+    }
+  }
+}
