@@ -6,7 +6,7 @@ anathema.watcher("containers", src + "/**/*.html", ["containers"], {
   runOnStart: true,
 })
 anathema.task("containers", function(task) {
-  const { staticOut } = anathema.config.paths
+  const { staticOut, serverOut } = anathema.config.paths
   return task
     .src(src + "/**/*.html")
     .transform((file) => {
@@ -14,5 +14,5 @@ anathema.task("containers", function(task) {
         file.name = "index.html"
       }
     })
-    .output(staticOut)
+    .output(serverOut)
 })

@@ -15,6 +15,7 @@ function generateWebpackConfig(task) {
   const {
     src,
     staticOut,
+    serverOut,
     componentServerOut,
     viewLayerOut,
   } = anathema.config.paths
@@ -131,22 +132,44 @@ function generateWebpackConfig(task) {
     },
   }
 
+  const SERVER_COMMON_CONFIG = {
+    externals: [nodeExternals()],
+    target: "node",
+    node: { __dirname: false },
+  }
+
   const WEBPACK_CONFIG = [
     Object.assign({}, COMMON_CONFIG, CLIENT_COMMON_CONFIG, {
-      entry: anathema.rootDirectory + "/src/Main.tsx",
+      entry: anathema.rootDirectory + "/src/Overlay.tsx",
       // node: { express: "empty", fs: "empty", net: "empty" },
       output: {
-        filename: projectName + "Client.pkg.js",
+        filename: projectName + "Overlay.pkg.js",
         path: anathema.rootDirectory + "/" + staticOut,
       },
-      plugins: PACKED
-        ? []
-        : [
-            new BundleAnalyzerPlugin({
-              openAnalyzer: false,
-              analyzerPort: 8888,
-            }),
-          ],
+      // plugins: PACKED
+      //   ? []
+      //   : [
+      //       new BundleAnalyzerPlugin({
+      //         openAnalyzer: false,
+      //         analyzerPort: 8888,
+      //       }),
+      //     ],
+    }),
+    Object.assign({}, COMMON_CONFIG, CLIENT_COMMON_CONFIG, {
+      entry: anathema.rootDirectory + "/src/Controller.tsx",
+      // node: { express: "empty", fs: "empty", net: "empty" },
+      output: {
+        filename: projectName + "Controller.pkg.js",
+        path: anathema.rootDirectory + "/" + staticOut,
+      },
+    }),
+    Object.assign({}, COMMON_CONFIG, SERVER_COMMON_CONFIG, {
+      entry: anathema.rootDirectory + "/src/Server.ts",
+      // node: { express: "empty", fs: "empty", net: "empty" },
+      output: {
+        filename: projectName + "Server.pkg.js",
+        path: anathema.rootDirectory + "/" + serverOut,
+      },
     }),
   ]
 

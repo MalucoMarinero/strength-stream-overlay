@@ -79,7 +79,11 @@ function Overlay(props: OverlayProps) {
       team: eventLine.team,
       attempts: eventLine.phases[scoringEvent.data.competitionPhase],
     }
-    upcomingLifters = liftOrder.slice(0, props.config.upcoming.count).reverse()
+    if (currentLifter.lot != liftOrder[0].lot) {
+      upcomingLifters = liftOrder.slice(0, props.config.upcoming.count).reverse()
+    } else {
+      upcomingLifters = liftOrder.slice(1, 1 + props.config.upcoming.count).reverse()
+    }
   } else {
     currentLifter = liftOrder[0]
     upcomingLifters = liftOrder.slice(1, 1 + props.config.upcoming.count).reverse()

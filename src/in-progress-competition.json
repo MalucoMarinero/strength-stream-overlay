@@ -10,7 +10,7 @@
         "snatch": [
           {"weight": 58, "status": "success"},
           {"weight": 62, "status": "fail"},
-          {"weight": 62, "status": "declared"}
+          {"weight": 68, "status": "success"}
         ],
         "clean": [
           {"weight": 80, "status": "declared"},
@@ -26,8 +26,8 @@
       "phases": {
         "snatch": [
           {"weight": 62, "status": "fail"},
-          {"weight": 62, "status": "success"},
-          {"weight": 66, "status": "declared"}
+          {"weight": 65, "status": "fail"},
+          {"weight": 69, "status": "declared"}
         ],
         "clean": [
           {"weight": 80, "status": "declared"},
@@ -42,8 +42,8 @@
       "team": "WAT",
       "phases": {
         "snatch": [
-          {"weight": 65, "status": "declared"},
-          {"weight": null, "status": "nil"},
+          {"weight": 65, "status": "success"},
+          {"weight": 85, "status": "declared"},
           {"weight": null, "status": "nil"}
         ],
         "clean": [
@@ -60,8 +60,8 @@
       "phases": {
         "snatch": [
           {"weight": 30, "status": "success"},
-          {"weight": 35, "status": "fail"},
-          {"weight": 35, "status": "success"}
+          {"weight": 40, "status": "success"},
+          {"weight": 45, "status": "success"}
         ],
         "clean": [
           {"weight": 80, "status": "declared"},
