@@ -4,7 +4,7 @@
   "description": "",
   "main": "build/StrengthStreamServer.pkg.js",
   "scripts": {
-    "anathema": "anathema --config anathema.js",
+    "anathema": "cross-env anathema --config anathema.js",
     "build": "cross-env anathema --config anathema.js build",
     "server": "cross-env nodemon --delay 1 --watch build -x \"node ./build/StrengthStreamServer.pkg.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"

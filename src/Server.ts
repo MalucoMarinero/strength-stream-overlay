@@ -2,7 +2,7 @@ import express from 'express'
 import path from 'path'
 import xlsx from 'xlsx'
 
-const FILE_PATH = '/run/media/bulk-storage/Dropbox/Weightlifting/WLContest.xlsm'
+const FILE_PATH = "D:\\Dropbox\\Weightlifting\\WLContest.xlsm"
 
 const workbook = xlsx.readFile(FILE_PATH, {cellStyles: true})
 console.log(workbook.Sheets['Session 1']['G7'])
@@ -17,7 +17,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/stream', (req, res) => {
-  res.sendFile(path.join(__dirname, 'overlay.html'))
+  res.sendFile(path.join(__dirname, 'stream.html'))
 })
 
 app.get('/controller', (req, res) => {
