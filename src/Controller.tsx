@@ -40,8 +40,6 @@ class ControllerState {
   @action.bound
   updateFromAPIData(state: CompleteServerState) {
     this.serverState = state
-    this.streamPath = state.config.src.path
-    this.streamSheet = state.config.src.target
   }
 
   @action.bound
@@ -80,6 +78,8 @@ const newState = new ControllerState()
 
 fetch('/api/ping').then((response) => response.json()).then((jsonIn: any) => {
   newState.updateFromAPIData(jsonIn as CompleteServerState)
+  newState.streamPath = newState.serverState.config.src.path
+  newState.streamSheet = newState.serverState.config.src.target
   const ControllerView = observer(Controller)
   preactRender(<ControllerView state={newState} />, controllerElem)
 })

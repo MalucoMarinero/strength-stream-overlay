@@ -40,8 +40,8 @@ export interface StreamStatus {
 export const initialConfig: Config = {
   src: {
     type: DataSources.NoonanCMS,
-    path: "D:\\Dropbox\\Weightlifting\\BlankStarterContest.xlsm",
-    target: "Session 1",
+    path: "",
+    target: "",
   }
 }
 
