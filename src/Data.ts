@@ -1,14 +1,47 @@
 import deepDiff from 'deep-diff'
 
+export enum DataSources {
+  NoonanCMS = 'noonan-cms'
+}
+
+export interface CompleteServerState {
+  config: Config
+  status: StreamStatus
+  data: {
+    competition: CompetitionData
+    events: CompetitionEvent[]
+  }
+}
+
 export interface Config {
   src: {
-    type: string
-    url?: string
+    type: DataSources
+    path?: string
+    target?: string
   }
-  upcoming: {
-    title: string
-    count: number
-    current_title: string
+  // upcoming: {
+  //   title: string
+  //   count: number
+  //   current_title: string
+  // }
+}
+
+export enum StreamState {
+  NoSource = "no-source",
+  ErrorFromSource = "error-from-source",
+  Running = "running",
+}
+
+export interface StreamStatus {
+  state: StreamState
+  message?: string
+}
+
+export const initialConfig: Config = {
+  src: {
+    type: DataSources.NoonanCMS,
+    path: "D:\\Dropbox\\Weightlifting\\BlankStarterContest.xlsm",
+    target: "Session 1",
   }
 }
 
@@ -61,6 +94,25 @@ export interface LiftOrderLine {
   attemptNumber?: number
   attemptWeight?: number
   attempts: Array<Attempt>
+}
+
+export interface PhaseScorecardLine {
+  lot: number
+  name: string
+  team: string
+  runningTotal?: number
+  scoredWeight?: number
+  attemptNumber?: number
+  attemptWeight?: number
+  attempts: Array<Attempt>
+}
+
+export interface TotalScorecardLine {
+  lot: number
+  name: string
+  team: string
+  total?: number
+  phases: {[key: string]: Array<Attempt>}
 }
 
 export function getEventsFromDiff(before: CompetitionData, after: CompetitionData, timestamp: number) {
@@ -150,6 +202,41 @@ export function getLifterOrder(data: CompetitionData): LiftOrderLine[] {
       return a.attemptNumber - b.attemptNumber
     }
     return a.lot - b.lot
+  })
+
+  return lines
+}
+
+export function getPhaseScorecard(data: CompetitionData): PhaseScorecardLine[] {
+  const lines = Object.keys(data.scorecard)
+    .map((lotKey) => data.scorecard[lotKey])
+    .map(line => {
+      const attempts = line.phases[data.competition_phase]
+      let scoredWeight = 0
+      attempts.forEach((a) => {
+        if (a.status == AttemptStatus.Success && a.weight > scoredWeight) {
+          scoredWeight = a.weight
+        }
+      })
+      const attemptNumber = attempts.filter((attempt) => attempt.status != AttemptStatus.Nil).length
+      const attemptWeight = Math.max(
+        ...attempts.filter((attempt) => attempt.status != AttemptStatus.Nil).map(a => a.weight)
+      )
+      const liftLine: LiftOrderLine = {
+        lot: line.lot,
+        name: line.name,
+        team: line.team,
+        attempts: attempts,
+        scoredWeight,
+        attemptNumber,
+        attemptWeight,
+      }
+
+      return liftLine
+    })
+
+  lines.sort((a, b) => {
+    return b.scoredWeight - a.scoredWeight
   })
 
   return lines

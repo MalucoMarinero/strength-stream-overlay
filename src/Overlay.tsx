@@ -1,26 +1,17 @@
 import { h, Fragment, render as preactRender } from "preact"
 import {
+  CompleteServerState,
   CompetitionEventType, CompetitionEvent, Config,
   CompetitionData, getLifterOrder, LiftOrderLine,
+  PhaseScorecardLine,
+  getPhaseScorecard,
   getEventsFromDiff,
 } from "./Data"
 
-let setConfig: Config = null
 
-fetch("./config.json")
-  .then(response => response.json())
-  .then(config => {
-    setConfig = config
-
-    renderCycle()
-  })
-
-
-function collector(srcData: any): Promise<CompetitionData> {
-  if (srcData.type == "native-json") {
-    return fetch(srcData.url)
-      .then(response => response.json() as Promise<CompetitionData>)
-  }
+function collector(): Promise<CompleteServerState> {
+  return fetch('/api/ping')
+    .then(response => response.json() as Promise<CompleteServerState>)
 }
 
 
@@ -30,20 +21,19 @@ let events: CompetitionEvent[] = []
 
 
 function renderCycle() {
-  collector(setConfig.src)
-    .then(competitionData => {
-      const timestamp = +new Date()
-      const newEvents = getEventsFromDiff(lastData, competitionData, timestamp)
-      events = events.concat(newEvents).filter((e) => e.expiry > timestamp)
-
-      lastData = competitionData
-
-      preactRender(<Overlay config={setConfig} competitionData={competitionData} events={events} />, overlayElem)
+  collector()
+    .then(serverState => {
+      preactRender(<Overlay
+        config={serverState.config}
+        competitionData={serverState.data.competition}
+        events={serverState.data.events}
+      />, overlayElem)
 
       setTimeout(renderCycle, 500)
     })
 }
 
+renderCycle()
 
 interface OverlayProps {
   competitionData: CompetitionData
@@ -54,6 +44,7 @@ interface OverlayProps {
 
 function Overlay(props: OverlayProps) {
   const liftOrder = getLifterOrder(props.competitionData)
+  const phaseScorecard = getPhaseScorecard(props.competitionData)
   const scoringEvents = props.events.filter((e) =>
     e.event_type == CompetitionEventType.FailedLift ||
     e.event_type == CompetitionEventType.SuccessfulLift
@@ -80,25 +71,46 @@ function Overlay(props: OverlayProps) {
       attempts: eventLine.phases[scoringEvent.data.competitionPhase],
     }
     if (currentLifter.lot != liftOrder[0].lot) {
-      upcomingLifters = liftOrder.slice(0, props.config.upcoming.count).reverse()
+      upcomingLifters = liftOrder.slice(0, 3).reverse()
     } else {
-      upcomingLifters = liftOrder.slice(1, 1 + props.config.upcoming.count).reverse()
+      upcomingLifters = liftOrder.slice(1, 1 + 3).reverse()
     }
   } else {
     currentLifter = liftOrder[0]
-    upcomingLifters = liftOrder.slice(1, 1 + props.config.upcoming.count).reverse()
+    upcomingLifters = liftOrder.slice(1, 1 + 3).reverse()
   }
 
-  return <div class="LiftOrder">
-    <h3 class="LiftOrder__title">{props.config.upcoming.title}</h3>
-    <ul class="LiftOrder__sequence">
-    {upcomingLifters.map((line) => {
-      return <UpcomingLifterRow key={line.lot} {...line} config={props.config} event={declarationEvents[line.lot]}/>
-      }
-    )}
-    </ul>
-    <CurrentLifterRow {...currentLifter} config={props.config} event={scoringEvent || declarationEvents[currentLifter.lot]} />
-  </div>
+  const DIM_UPCOMING_LIFTER_TITLE = 22
+  const DIM_UPCOMING_LIFTER_ROW = 29
+  const DIM_CURRENT_LIFTER_ROW = 60
+  const DIM_SCORING_ROW = 29
+
+  const scorecardHeight = DIM_SCORING_ROW * phaseScorecard.length + 50
+  const liftOrderTransform = showScoringEvent ? scorecardHeight * -1 : 0
+
+  return <Fragment>
+    <div class="LiftOrder" style={{
+      transform: `translateY(${liftOrderTransform}px)`
+    }}>
+      <h3 class="LiftOrder__title">{"Upcoming"}</h3>
+      <ul class="LiftOrder__sequence">
+      {upcomingLifters.map((line) => {
+        return <UpcomingLifterRow key={line.lot} {...line} config={props.config} event={declarationEvents[line.lot]}/>
+        }
+      )}
+      </ul>
+      <CurrentLifterRow {...currentLifter} config={props.config} event={scoringEvent || declarationEvents[currentLifter.lot]} />
+    </div>
+    <div class="Scorecard" style={{
+      transform: `translateY(${liftOrderTransform}px)`
+    }}>
+      <ol class="Scorecard__rows">
+        {phaseScorecard.map((line) => {
+          return <PhaseScorecardRow key={line.lot} {...line} config={props.config} />
+        })}
+      </ol>
+    </div>
+  </Fragment>
 }
 
 interface UpcomingLifterRowProps extends LiftOrderLine {
@@ -179,7 +191,7 @@ function CurrentLifterRow (props: CurrentLifterRowProps) {
   }
 
   return <p class="LiftOrder__current" key={props.lot}>
-    <h3 class="LiftOrder__currentTitle">{props.config.upcoming.current_title}</h3>
+    <h3 class="LiftOrder__currentTitle">{"Current Lifter"}</h3>
     <span class="LiftOrder__currentContent">
       <span class="LiftOrder__currentLot">
         {props.lot}
@@ -200,4 +212,29 @@ function CurrentLifterRow (props: CurrentLifterRowProps) {
     </span>
     {eventDisplay}
   </p>
+}
+
+interface PhaseScorecardRowProps extends PhaseScorecardLine {
+  config: Config
+}
+
+function PhaseScorecardRow (props: PhaseScorecardRowProps) {
+  return <li class="Scorecard__row" key={props.lot}>
+      <span class="Scorecard__rowLot">
+        {props.lot}
+      </span>
+      <span class="Scorecard__rowName">
+        {props.name}
+      </span>
+      <span class="Scorecard__rowTeam">
+        {props.team}
+      </span>
+      <span class="Scorecard__rowAttemptStates">
+        {props.attempts.map((a) =>
+        <span class={`Scorecard__rowAttemptState is-${a.status}`}>
+          {a.weight}
+        </span>
+        )}
+      </span>
+    </li>
 }

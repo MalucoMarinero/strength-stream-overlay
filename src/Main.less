@@ -293,7 +293,89 @@ html {
   }
 }
 
+.Scorecard ,
+.LiftOrder {
+  transition: opacity 0.4s linear, transform ease 0.5s;
+}
 
+.Scorecard {
+  position: fixed;
 
+  top: calc(100% + 15px);
+  left: 5px;
 
+  &__rows {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
 
+  &__row {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    vertical-align: middle;
+    display: flex;
+
+    &Lot {
+      font-weight: bold;
+      text-align: center;
+      padding-top: 3px;
+      margin: 1px 1px 0 0;
+      background: white;
+      width: 24px;
+      height: 28px;
+    }
+
+    &Name {
+      padding-left: 5px;
+      margin: 1px 1px 0 0;
+      padding-top: 3px;
+      background: rgb(50,50,50);
+      width: 200px;
+      height: 28px;
+      text-overflow: ellipsis;
+      color: white;
+    }
+
+    &Team {
+      margin: 1px 1px 0 0;
+      padding-top: 3px;
+      background: rgb(40,40,40);
+      width: 70px;
+      text-align: center;
+      color: white;
+    }
+
+    &AttemptStates {
+      margin: 1px 1px 0 0;
+      display: flex;
+      height: 28px;
+    }
+
+    &AttemptState {
+      margin: 1px 1px 0 0;
+      background: rgb(40,40,40);
+      padding-top: 3px;
+      display: inline-block;
+      width: 40px;
+      color: white;
+      text-align: center;
+
+      &.is-declared {
+        background: rgb(40,40,40);
+        border: 1px solid yellow;
+      }
+      &.is-success {
+        background: white;
+        color: #000;
+      }
+      &.is-fail {
+        background: red;
+        color: #000;
+      }
+      &.is-nil {
+      }
+    }
+  }
+}
