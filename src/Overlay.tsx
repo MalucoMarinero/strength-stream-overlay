@@ -1,4 +1,5 @@
 import { h, Fragment, render as preactRender } from "preact"
+import cx from "./platform/cx"
 import {
   CompleteServerState,
   CompetitionEventType, CompetitionEvent, Config,
@@ -6,6 +7,8 @@ import {
   PhaseScorecardLine,
   getPhaseScorecard,
   getEventsFromDiff,
+  getTotalScorecard,
+  TotalScorecardLine,
 } from "./Data"
 
 
@@ -44,13 +47,23 @@ interface OverlayProps {
 
 function Overlay(props: OverlayProps) {
   const liftOrder = getLifterOrder(props.competitionData)
-  const phaseScorecard = getPhaseScorecard(props.competitionData)
+  const totalScorecard = getTotalScorecard(props.competitionData)
   const scoringEvents = props.events.filter((e) =>
     e.event_type == CompetitionEventType.FailedLift ||
     e.event_type == CompetitionEventType.SuccessfulLift
   )
   const showScoringEvent = scoringEvents.length > 0
   const scoringEvent = scoringEvents[0]
+
+  const endPhaseEvents = props.events.filter((e) =>
+    e.event_type == CompetitionEventType.PhaseEnd
+  )
+  const showUpcoming = endPhaseEvents.length == 0 || showScoringEvent
+  const phaseScorecard = endPhaseEvents.length > 0
+    ? getPhaseScorecard(props.competitionData, endPhaseEvents[0].data.phaseEnded)
+    : getPhaseScorecard(props.competitionData)
+
+  const showBigScorecard = !showScoringEvent && endPhaseEvents.length > 0
 
   const declarationEvents: {[key: string]: CompetitionEvent} = {}
   props.events.forEach((e) => {
@@ -80,6 +93,10 @@ function Overlay(props: OverlayProps) {
     upcomingLifters = liftOrder.slice(1, 1 + 3).reverse()
   }
 
+  if (endPhaseEvents.length > 0) {
+    upcomingLifters = []
+  }
+
   const DIM_UPCOMING_LIFTER_TITLE = 22
   const DIM_UPCOMING_LIFTER_ROW = 29
   const DIM_CURRENT_LIFTER_ROW = 60
@@ -89,10 +106,15 @@ function Overlay(props: OverlayProps) {
   const liftOrderTransform = showScoringEvent ? scorecardHeight * -1 : 0
 
   return <Fragment>
-    <div class="LiftOrder" style={{
+    <div class={cx({
+      "LiftOrder": true,
+      "is-visible": showUpcoming,
+    })} style={{
       transform: `translateY(${liftOrderTransform}px)`
     }}>
-      <h3 class="LiftOrder__title">{"Upcoming"}</h3>
+      {upcomingLifters.length > 0 &&
+        <h3 class="LiftOrder__title">{"Upcoming"}</h3>
+      }
       <ul class="LiftOrder__sequence">
       {upcomingLifters.map((line) => {
         return <UpcomingLifterRow key={line.lot} {...line} config={props.config} event={declarationEvents[line.lot]}/>
@@ -101,12 +123,25 @@ function Overlay(props: OverlayProps) {
       </ul>
       <CurrentLifterRow {...currentLifter} config={props.config} event={scoringEvent || declarationEvents[currentLifter.lot]} />
     </div>
-    <div class="Scorecard" style={{
+    <div class={cx({
+      "PhaseScorecard": true,
+      "is-visible": !showBigScorecard,
+    })} style={{
       transform: `translateY(${liftOrderTransform}px)`
     }}>
-      <ol class="Scorecard__rows">
+      <ol class="PhaseScorecard__rows">
         {phaseScorecard.map((line) => {
           return <PhaseScorecardRow key={line.lot} {...line} config={props.config} />
+        })}
+      </ol>
+    </div>
+    <div class={cx({
+      "BigScorecard": true,
+      "is-visible": showBigScorecard,
+    })}>
+      <ol class="BigScorecard__rows">
+        {totalScorecard.map((line) => {
+          return <BigScorecardRow key={line.lot} {...line} config={props.config} />
         })}
       </ol>
     </div>
@@ -219,22 +254,59 @@ interface PhaseScorecardRowProps extends PhaseScorecardLine {
 }
 
 function PhaseScorecardRow (props: PhaseScorecardRowProps) {
-  return <li class="Scorecard__row" key={props.lot}>
-      <span class="Scorecard__rowLot">
+  return <li class="PhaseScorecard__row" key={props.lot}>
+      <span class="PhaseScorecard__rowLot">
         {props.lot}
       </span>
-      <span class="Scorecard__rowName">
+      <span class="PhaseScorecard__rowName">
         {props.name}
       </span>
-      <span class="Scorecard__rowTeam">
+      <span class="PhaseScorecard__rowTeam">
         {props.team}
       </span>
-      <span class="Scorecard__rowAttemptStates">
+      <span class="PhaseScorecard__rowAttemptStates">
         {props.attempts.map((a) =>
-        <span class={`Scorecard__rowAttemptState is-${a.status}`}>
+        <span class={`PhaseScorecard__rowAttemptState is-${a.status}`}>
           {a.weight}
         </span>
         )}
+      </span>
+    </li>
+}
+
+interface BigScorecardRowProps extends TotalScorecardLine {
+  config: Config
+}
+
+function BigScorecardRow (props: BigScorecardRowProps) {
+  return <li class="BigScorecard__row" key={props.lot}>
+      <span class="BigScorecard__rowLot">
+        {props.lot}
+      </span>
+      <span class="BigScorecard__rowName">
+        {props.name}
+      </span>
+      <span class="BigScorecard__rowTeam">
+        {props.team}
+      </span>
+      <span class="BigScorecard__rowPhases">
+        <span class="BigScorecard__rowAttemptStates">
+          {props.phases['snatch'].map((a) =>
+          <span class={`BigScorecard__rowAttemptState is-${a.status}`}>
+            {a.weight}
+          </span>
+          )}
+        </span>
+        <span class="BigScorecard__rowAttemptStates">
+          {props.phases['clean'].map((a) =>
+          <span class={`BigScorecard__rowAttemptState is-${a.status}`}>
+            {a.weight}
+          </span>
+          )}
+        </span>
+        <span class={`BigScorecard__rowTotal`}>
+          {props.total}
+        </span>
       </span>
     </li>
 }

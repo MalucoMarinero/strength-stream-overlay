@@ -120,6 +120,30 @@ export function getEventsFromDiff(before: CompetitionData, after: CompetitionDat
   const events: CompetitionEvent[] = []
   const diff = deepDiff.diff(before, after)
 
+  // phase check
+  if (before && before.competition_phase && after.scorecard) {
+    const phaseCompleted = Object.keys(after.scorecard).every((lot) => {
+      const line = after.scorecard[lot]
+      return line.phases[before.competition_phase].every((attempt) => {
+        return [
+          AttemptStatus.Fail,
+          AttemptStatus.Pass,
+          AttemptStatus.Success,
+        ].indexOf(attempt.status) != -1
+      })
+    })
+
+    if (phaseCompleted) {
+      events.push({
+        event_type: CompetitionEventType.PhaseEnd,
+        data: {
+          phaseEnded: before.competition_phase,
+        },
+        expiry: timestamp + 60000,
+      })
+    }
+  }
+
   if (diff) {
     diff.forEach((change: any) => {
       if (change.path && change.path[change.path.length - 1] == "weight") {
@@ -208,11 +232,11 @@ export function getLifterOrder(data: CompetitionData): LiftOrderLine[] {
   return lines
 }
 
-export function getPhaseScorecard(data: CompetitionData): PhaseScorecardLine[] {
+export function getPhaseScorecard(data: CompetitionData, override_phase?: string): PhaseScorecardLine[] {
   const lines = Object.keys(data.scorecard)
     .map((lotKey) => data.scorecard[lotKey])
     .map(line => {
-      const attempts = line.phases[data.competition_phase]
+      const attempts = line.phases[override_phase || data.competition_phase]
       let scoredWeight = 0
       attempts.forEach((a) => {
         if (a.status == AttemptStatus.Success && a.weight > scoredWeight) {
@@ -238,6 +262,41 @@ export function getPhaseScorecard(data: CompetitionData): PhaseScorecardLine[] {
 
   lines.sort((a, b) => {
     return b.scoredWeight - a.scoredWeight
+  })
+
+  return lines
+}
+
+export function getTotalScorecard(data: CompetitionData): TotalScorecardLine[] {
+  const lines = Object.keys(data.scorecard)
+    .map((lotKey) => data.scorecard[lotKey])
+    .map(line => {
+
+      let total = 0
+
+      Object.keys(line.phases).forEach((phase) => {
+        const attempts = line.phases[phase]
+        let scoredWeight = 0
+        attempts.forEach((a) => {
+          if (a.status == AttemptStatus.Success && a.weight > scoredWeight) {
+            scoredWeight = a.weight
+          }
+        })
+        total += scoredWeight
+      })
+      const liftLine: TotalScorecardLine = {
+        lot: line.lot,
+        name: line.name,
+        team: line.team,
+        phases: line.phases,
+        total,
+      }
+
+      return liftLine
+    })
+
+  lines.sort((a, b) => {
+    return b.total - a.total
   })
 
   return lines

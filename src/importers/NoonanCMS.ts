@@ -77,6 +77,12 @@ export default function(config: Config): Promise<CompetitionData> {
 
 function parseAttemptCell(cell: any): Attempt {
   if (cell.v) {
+    if (cell.v == "---") {
+      return {
+        weight: null,
+        status: AttemptStatus.Pass,
+      }
+    }
     if (cell.s && cell.s.fgColor && cell.s.fgColor.rgb == '00B050') {
       return {
         weight: Math.round(cell.v),
