@@ -3,14 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "main": "build/StrengthStreamServer.pkg.js",
+  "bin": "build/StrengthStreamServer.pkg.js",
   "scripts": {
     "anathema": "cross-env anathema --config anathema.js",
     "build": "cross-env anathema --config anathema.js build",
+    "pkg": "cross-env pkg .",
     "server": "cross-env nodemon --delay 1 --watch build -x \"node ./build/StrengthStreamServer.pkg.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "pkg": {
-    "assets": "build/assets/**/*",
+    "assets": "build/**/*",
     "outputPath": "dist"
   },
   "author": "",

@@ -49,6 +49,7 @@ export enum CompetitionEventType {
   SuccessfulLift,
   FailedLift,
   DeclarationChange,
+  PhaseEnd,
 }
 
 export interface CompetitionEvent {
