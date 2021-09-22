@@ -72,7 +72,12 @@ function Overlay(props: OverlayProps) {
     }
   })
 
-  let currentLifter: LiftOrderLine = null
+  let currentLifter: LiftOrderLine = {
+    lot: 0,
+    name: '',
+    team: '',
+    attempts: [],
+  }
   let upcomingLifters: LiftOrderLine[] = []
 
   if (showScoringEvent) {
@@ -83,13 +88,15 @@ function Overlay(props: OverlayProps) {
       team: eventLine.team,
       attempts: eventLine.phases[scoringEvent.data.competitionPhase],
     }
-    if (currentLifter.lot != liftOrder[0].lot) {
-      upcomingLifters = liftOrder.slice(0, 3).reverse()
-    } else {
-      upcomingLifters = liftOrder.slice(1, 1 + 3).reverse()
+    if (liftOrder.length > 0) {
+      if (currentLifter.lot != liftOrder[0].lot) {
+        upcomingLifters = liftOrder.slice(0, 3).reverse()
+      } else {
+        upcomingLifters = liftOrder.slice(1, 1 + 3).reverse()
+      }
     }
   } else {
-    currentLifter = liftOrder[0]
+    currentLifter = liftOrder[0] || currentLifter
     upcomingLifters = liftOrder.slice(1, 1 + 3).reverse()
   }
 

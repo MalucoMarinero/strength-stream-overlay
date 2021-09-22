@@ -19,11 +19,11 @@ anathema.task("assets", function(task) {
 
   return task
     .src(matcherPath, {
-      base: "src",
     })
     .setWorkerThreshold(5)
     .transform((file) => {
       // preserve binary data by setting original
+      console.log(file.originalPath);
       file.data = file.originalData
     })
     .output(staticOut)

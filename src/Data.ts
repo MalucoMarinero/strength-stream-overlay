@@ -94,6 +94,7 @@ export interface LiftOrderLine {
   scoredWeight?: number
   attemptNumber?: number
   attemptWeight?: number
+  attemptProgression?: number
   attempts: Array<Attempt>
 }
 
@@ -197,20 +198,26 @@ export function getLifterOrder(data: CompetitionData): LiftOrderLine[] {
     .map(line => {
       const attempts = line.phases[data.competition_phase]
       let scoredWeight = 0
-      attempts.forEach((a) => {
+      let attemptProgression = 0;
+      attempts.forEach((a, ix) => {
         if (a.status == AttemptStatus.Success && a.weight > scoredWeight) {
           scoredWeight = a.weight
+        }
+        if (attempts[ix - 1]) {
+          attemptProgression = a.weight - attempts[ix - 1].weight
         }
       })
       const attemptNumber = attempts.filter((attempt) => attempt.status != AttemptStatus.Nil).length
       const attemptWeight = Math.max(
         ...attempts.filter((attempt) => attempt.status != AttemptStatus.Nil).map(a => a.weight)
       )
+
       const liftLine: LiftOrderLine = {
         lot: line.lot,
         name: line.name,
         team: line.team,
         attempts: attempts,
+        attemptProgression,
         scoredWeight,
         attemptNumber,
         attemptWeight,
@@ -225,6 +232,9 @@ export function getLifterOrder(data: CompetitionData): LiftOrderLine[] {
     }
     if (a.attemptNumber != b.attemptNumber) {
       return a.attemptNumber - b.attemptNumber
+    }
+    if (a.attemptProgression != b.attemptProgression) {
+      return b.attemptProgression - a.attemptProgression
     }
     return a.lot - b.lot
   })
