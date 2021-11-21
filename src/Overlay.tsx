@@ -133,7 +133,7 @@ function Overlay(props: OverlayProps) {
       )}
       </ul>
     </div>
-    <CurrentLifter {...currentLifter} config={props.config} event={scoringEvent || newLifterEvent || declarationEvents[currentLifter.lot]} showCurrentLifterBar={showCurrentLifterBar} />
+    <CurrentLifter {...currentLifter} config={props.config} event={scoringEvent || newLifterEvent || declarationEvents[currentLifter.lot]} showCurrentLifterBar={showCurrentLifterBar as boolean} />
     <div class={cx({
       "PhaseScorecard": true,
       "is-visible": !showBigScorecard,
