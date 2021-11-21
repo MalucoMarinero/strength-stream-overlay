@@ -1,5 +1,6 @@
 import express from 'express'
 import path from 'path'
+import fs from 'fs'
 import xlsx from 'xlsx'
 import ImportNoonanCMS from "./importers/NoonanCMS"
 import {
@@ -10,7 +11,25 @@ import {
 } from "./Data"
 import {json as jsonParser} from 'body-parser'
 
+const envConfigRoot = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + "/.local/share")
+const serverConfigFile = path.join(envConfigRoot, 'StrengthStreamOverlay', 'config.json')
+
+fs.mkdir(
+  path.join(envConfigRoot, 'StrengthStreamOverlay'),
+  {recursive: true},
+  () => {}
+)
+
 let config = initialConfig
+try {
+  const result = fs.readFileSync(serverConfigFile, {encoding: 'utf8'})
+  console.log(`Config loaded from ${serverConfigFile}`)
+
+  config = JSON.parse(result)
+} catch (e) {
+  console.log("No config file found.")
+}
+
 let status: StreamStatus = {
   state: StreamState.NoSource,
   message: "",
@@ -44,6 +63,15 @@ app.post('/api/config/src', (req, res) => {
   config.src.type = req.body.type
   config.src.path = req.body.path
   config.src.target = req.body.target
+
+  fs.writeFile(
+    serverConfigFile,
+    JSON.stringify(config),
+    {encoding: 'utf8'},
+    () => {
+      console.log(`Config saved to ${serverConfigFile}`)
+    }
+  )
 
   res.json(getLatestServerState())
 })

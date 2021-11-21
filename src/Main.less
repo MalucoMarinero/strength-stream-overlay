@@ -20,8 +20,8 @@ html {
 
 .LiftOrder {
   position: fixed;
-  bottom: 5px;
-  left: 5px;
+  bottom: 20px;
+  left: 20px;
 
   &__title {
     margin: 0;
@@ -41,6 +41,7 @@ html {
 
   &__upcoming {
     list-style: none;
+    font-size: 20px;
     padding: 0;
     margin: 0;
     vertical-align: middle;
@@ -52,40 +53,59 @@ html {
       padding-top: 3px;
       margin: 1px 1px 0 0;
       background: white;
-      width: 24px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
+    }
+
+    &.is-current &Lot {
+      background: yellow;
+    }
+    &.is-current &Name ,
+    &.is-current &Team ,
+    &.is-current &Weight {
+      color: yellow;
+    }
+    
+    &Identifier {
+      background: rgb(50,50,50);
+      width: 160px;
+      height: 32px;
+      padding-left: 5px;
+      padding-right: 5px;
+      margin: 1px 1px 0 0;
+      padding-top: 3px;
+      display: flex;
+      justify-content: space-between;
     }
 
     &Name {
-      padding-left: 5px;
-      margin: 1px 1px 0 0;
-      padding-top: 3px;
-      background: rgb(50,50,50);
-      width: 200px;
-      height: 28px;
-      text-overflow: ellipsis;
+      overflow: hidden;
+      font-weight: bold;
       color: white;
+      flex: 5 1 auto;
     }
 
     &Team {
-      margin: 1px 1px 0 0;
-      padding-top: 3px;
-      background: rgb(40,40,40);
-      width: 70px;
+      font-weight: normal;
+      font-size: 17px;
+      padding-top: 2px;
+      margin-right: 0;
+      padding-left: 4px;
       text-align: center;
       color: white;
+      flex: 1 0 auto;
     }
 
     &AttemptStates {
-      margin: 1px 1px 0 0;
+      margin: 1px 0 0 0;
       display: flex;
-      height: 28px;
+      height: 32px;
     }
     &AttemptState {
       margin-right: 1px;
       background: white;
       width: 10px;
-      height: 28px;
+      height: 32px;
 
       &.is-declared {
         background: rgb(40,40,40);
@@ -121,7 +141,7 @@ html {
         background: rgb(40,40,40);
         padding-top: 3px;
         width: 39px;
-        height: 28px;
+        height: 32px;
       }
 
       &.is-active {
@@ -131,7 +151,6 @@ html {
 
     &Weight {
       margin: 1px 1px 0 0;
-      border: 1px solid yellow;
       background: rgb(40,40,40);
       padding-top: 3px;
       width: 40px;
@@ -145,131 +164,158 @@ html {
     position: relative;
     display: flex;
 
-    &Event {
-      background: white;
-      margin-left: 1px;
-      background: rgb(50,50,50);
-      justify-content: center;
-      display: flex;
-      flex-direction: column;
-      width: 130px;
-      text-align: center;
-      font-weight: bold;
+  }
+}
 
-      &Heading {
-        text-transform: uppercase;
-        color: white;
-      }
+.CurrentLifter {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  position: absolute;
+  background: rgba(50,50,50, 0.8);
+  left: 350px;
+  bottom: 5px;
+  right: 350px;
 
-      &.is-success &Info {
-        background: white;
-        height: 20px;
-        margin-top: 5px;
-        margin-left: 10px;
-        margin-right: 10px;
-      }
+  &.is-visible {
+   opacity: 1;
+   transform: translateY(0px);
+  }
 
-      &.is-fail &Info {
-        background: red;
-        height: 20px;
-        margin-top: 5px;
-        margin-left: 10px;
-        margin-right: 10px;
-      }
 
-      &.is-declaration &Info {
-        border: 1px solid yellow;
-        padding: 2px 6px;
-        text-align: center;
-        color: white;
-        height: 26px;
-        margin-top: 5px;
-        margin-left: 10px;
-        margin-right: 10px;
-      }
+  &__identifier {
+    background: rgb(50,50,50);
+    font-size: 26px;
+    color: white;
+    display: flex;
+  }
+
+
+  &__lot {
+    font-weight: bold;
+    display: inline-block;
+    text-align: center;
+    padding-top: 6px;
+    margin-left: 10px;
+    margin-right: 5px;
+    background: white;
+    color: black;
+    width: 40px;
+    height: 44px;
+  }
+
+  &__name {
+    margin-left: 6px;
+    padding-top: 6px;
+    font-weight: normal;
+  }
+  &__team {
+    margin-left: auto;
+    padding-top: 6px;
+    margin-right: 16px;
+    font-weight: bold;
+  }
+
+
+  &__lifts {
+    display: flex;
+    color: white;
+    height: 44px;
+  }
+
+
+  &__attemptStates {
+    margin-left: 40px;
+    display: inline-block;
+    height: 44px;
+    margin-right: 20px;
+    vertical-align: top;
+  }
+  &__attemptState {
+    margin-right: 1px;
+    padding-top: 2px;
+    display: inline-block;
+    text-align: center;
+    background: white;
+    position: relative;
+    font-size: 26px;
+    width: 70px;
+    height: 44px;
+    vertical-align: top;
+    background: rgb(40,40,40);
+
+    & + & {
+      margin-left: 16px;
     }
 
-    &Title {
+    &:before {
+      content: '';
       position: absolute;
-      top: 0;
+      bottom: 0;
+      height: 10px;
       left: 0;
-      margin: 0;
-      font-size: 14px;
-      font-weight: bold;
-      text-transform: uppercase;
-      display: inline-block;
+      right: 0;
+    }
+
+    &.is-declared:before {
+      background: yellow;
+    }
+    &.is-success:before {
       background: white;
-      padding: 3px;
     }
-
-    &Content {
-      padding-bottom: 4px;
-      background: rgb(50,50,50);
-      min-width: 300px;
-      color: white;
+    &.is-fail:before {
+      background: red;
     }
-
-    &Lot {
-      font-weight: bold;
-      margin-top: 28px;
-      display: inline-block;
-      text-align: center;
-      padding-top: 3px;
-      margin-left: 4px;
-      margin-right: 5px;
-      background: white;
-      color: black;
-      width: 24px;
-      height: 28px;
+    &.is-nil {
     }
+  }
 
-    &Name {
-      padding-top: 28px;
-      margin-left: 6px;
+  &__weight {
+    margin: 1px 1px 0 0;
+    border: 1px solid yellow;
+    background: rgb(40,40,40);
+    padding-top: 3px;
+    width: 40px;
+    color: white;
+    text-align: center;
+  }
+
+
+  &__currentEvent {
+    margin-left: auto;
+    margin-right: 16px;
+    justify-content: center;
+    font-weight: bold;
+    display: flex;
+
+    &Info {
+      font-size: 26px;
+      height: 44px;
+      padding: 3px 20px 0;
       font-weight: normal;
     }
-    &Team {
-      padding-top: 28px;
-      margin-left: 14px;
-      font-weight: bold;
-    }
 
-    &AttemptStates {
-      margin-left: 40px;
-      margin-top: 28px;
-      display: inline-block;
-      height: 28px;
-      margin-right: 20px;
-      vertical-align: top;
-    }
-    &AttemptState {
-      margin-right: 1px;
-      padding-top: 3px;
-      display: inline-block;
-      text-align: center;
-      background: white;
-      position: relative;
-      width: 50px;
-      height: 28px;
+    &Heading {
+      text-transform: uppercase;
+      color: white;
+      font-size: 26px;
+      height: 44px;
+      padding: 3px 20px 0;
       vertical-align: top;
       background: rgb(40,40,40);
-
-      & + & {
-        margin-left: 8px;
-      }
+      position: relative;
 
       &:before {
         content: '';
         position: absolute;
-        bottom: calc(100% + 1px);
+        bottom: 0;
         height: 10px;
         left: 0;
         right: 0;
       }
 
-      &.is-declared {
-        background: rgb(40,40,40);
-        border: 1px solid yellow;
+      &.is-declared:before {
+        background: yellow;
       }
       &.is-success:before {
         background: white;
@@ -277,19 +323,20 @@ html {
       &.is-fail:before {
         background: red;
       }
-      &.is-nil {
-      }
     }
 
-    &Weight {
-      margin: 1px 1px 0 0;
-      border: 1px solid yellow;
-      background: rgb(40,40,40);
-      padding-top: 3px;
-      width: 40px;
-      color: white;
-      text-align: center;
+    &.is-success &Heading:before {
+      background: white;
     }
+
+    &.is-fail &Heading:before {
+      background: red;
+    }
+
+    &.is-declaration &Heading:before {
+      background: yellow;
+    }
+
   }
 }
 
@@ -377,7 +424,6 @@ html {
 }
 
 
-
 .BigScorecard {
   position: fixed;
   display: flex;
@@ -385,6 +431,7 @@ html {
   align-items: center;
   height: 100%;
   width: 100%;
+  font-size: 24px;
 
   &__rows {
     list-style: none;
@@ -393,6 +440,7 @@ html {
   }
 
   &__row {
+    @rowHeight: 36px;
     list-style: none;
     padding: 0;
     margin: 0;
@@ -405,8 +453,8 @@ html {
       padding-top: 3px;
       margin: 1px 1px 0 0;
       background: white;
-      width: 24px;
-      height: 28px;
+      width: 36px;
+      height: @rowHeight;
     }
 
     &Name {
@@ -414,38 +462,39 @@ html {
       margin: 1px 1px 0 0;
       padding-top: 3px;
       background: rgb(50,50,50);
-      width: 200px;
-      height: 28px;
+      width: 300px;
+      height: @rowHeight;
       text-overflow: ellipsis;
       color: white;
     }
 
     &Team {
       margin: 1px 1px 0 0;
-      padding-top: 3px;
+      padding-top: 8px;
       background: rgb(40,40,40);
-      width: 70px;
+      width: 90px;
+      font-size: 17px;
       text-align: center;
       color: white;
     }
     &Phases {
-      margin: 1px 1px 0 0;
+      margin: 0px 1px 0 0;
       display: flex;
-      height: 28px;
+      height: @rowHeight;
     }
 
     &AttemptStates {
-      margin: 1px 1px 0 0;
+      margin: 1px 1px 0 2px;
       display: flex;
-      height: 28px;
+      height: @rowHeight;
     }
 
     &AttemptState {
-      margin: 1px 1px 0 0;
+      margin: 0px 1px 0px 0;
       background: rgb(40,40,40);
       padding-top: 3px;
       display: inline-block;
-      width: 40px;
+      width: 50px;
       color: white;
       text-align: center;
 
@@ -465,15 +514,15 @@ html {
       }
     }
     &Total {
-      margin: 1px 1px 0 0;
+      margin: 1px 1px -1px 1px;
       background: rgb(40,40,40);
       padding-top: 3px;
       display: inline-block;
-      width: 40px;
+      width: 60px;
       color: white;
       text-align: center;
 
-        background: white;
+        background: yellow;
         color: #000;
     }
   }

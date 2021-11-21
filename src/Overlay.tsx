@@ -10,6 +10,8 @@ import {
   getTotalScorecard,
   TotalScorecardLine,
 } from "./Data"
+import { data } from "autoprefixer"
+import { decl } from "postcss"
 
 
 function collector(): Promise<CompleteServerState> {
@@ -52,18 +54,21 @@ function Overlay(props: OverlayProps) {
     e.event_type == CompetitionEventType.FailedLift ||
     e.event_type == CompetitionEventType.SuccessfulLift
   )
-  const showScoringEvent = scoringEvents.length > 0
+  const newLifterEvents = props.events.filter((e) =>
+    e.event_type == CompetitionEventType.NewLifter
+  )
   const scoringEvent = scoringEvents[0]
+  const newLifterEvent = newLifterEvents[0]
 
   const endPhaseEvents = props.events.filter((e) =>
     e.event_type == CompetitionEventType.PhaseEnd
   )
-  const showUpcoming = endPhaseEvents.length == 0 || showScoringEvent
+  const showUpcoming = endPhaseEvents.length == 0
   const phaseScorecard = endPhaseEvents.length > 0
     ? getPhaseScorecard(props.competitionData, endPhaseEvents[0].data.phaseEnded)
     : getPhaseScorecard(props.competitionData)
 
-  const showBigScorecard = !showScoringEvent && endPhaseEvents.length > 0
+  const showBigScorecard = !scoringEvent && endPhaseEvents.length > 0
 
   const declarationEvents: {[key: string]: CompetitionEvent} = {}
   props.events.forEach((e) => {
@@ -74,50 +79,49 @@ function Overlay(props: OverlayProps) {
 
   let currentLifter: LiftOrderLine = {
     lot: 0,
+    orderNumber: 0,
     name: '',
     team: '',
     attempts: [],
   }
   let upcomingLifters: LiftOrderLine[] = []
+  let showFocusCard = false
 
-  if (showScoringEvent) {
+  if (scoringEvent) {
     const eventLine = props.competitionData.scorecard[scoringEvent.data.lotKey]
     currentLifter = {
+      orderNumber: 0,
       lot: eventLine.lot,
       name: eventLine.name,
       team: eventLine.team,
       attempts: eventLine.phases[scoringEvent.data.competitionPhase],
     }
-    if (liftOrder.length > 0) {
-      if (currentLifter.lot != liftOrder[0].lot) {
-        upcomingLifters = liftOrder.slice(0, 3).reverse()
-      } else {
-        upcomingLifters = liftOrder.slice(1, 1 + 3).reverse()
-      }
-    }
+    upcomingLifters = liftOrder.slice(0, 1 + 10).reverse()
   } else {
     currentLifter = liftOrder[0] || currentLifter
-    upcomingLifters = liftOrder.slice(1, 1 + 3).reverse()
+    upcomingLifters = liftOrder.slice(0, 1 + 10).reverse()
   }
 
   if (endPhaseEvents.length > 0) {
     upcomingLifters = []
   }
 
+
   const DIM_UPCOMING_LIFTER_TITLE = 22
   const DIM_UPCOMING_LIFTER_ROW = 29
   const DIM_CURRENT_LIFTER_ROW = 60
   const DIM_SCORING_ROW = 29
 
-  const scorecardHeight = DIM_SCORING_ROW * phaseScorecard.length + 50
-  const liftOrderTransform = showScoringEvent ? scorecardHeight * -1 : 0
+  const scorecardHeight = DIM_SCORING_ROW * phaseScorecard.length + 80
+  // const liftOrderTransform = showScoringEvent ? scorecardHeight * -1 : 0
+  const liftOrderTransform = 0
+  const showCurrentLifterBar = !showBigScorecard && (scoringEvents.length > 0 || newLifterEvents.length > 0 || declarationEvents[currentLifter.lot])
 
   return <Fragment>
     <div class={cx({
       "LiftOrder": true,
       "is-visible": showUpcoming,
     })} style={{
-      transform: `translateY(${liftOrderTransform}px)`
     }}>
       {upcomingLifters.length > 0 &&
         <h3 class="LiftOrder__title">{"Upcoming"}</h3>
@@ -128,8 +132,8 @@ function Overlay(props: OverlayProps) {
         }
       )}
       </ul>
-      <CurrentLifterRow {...currentLifter} config={props.config} event={scoringEvent || declarationEvents[currentLifter.lot]} />
     </div>
+    <CurrentLifter {...currentLifter} config={props.config} event={scoringEvent || newLifterEvent || declarationEvents[currentLifter.lot]} showCurrentLifterBar={showCurrentLifterBar} />
     <div class={cx({
       "PhaseScorecard": true,
       "is-visible": !showBigScorecard,
@@ -157,20 +161,28 @@ function Overlay(props: OverlayProps) {
 
 interface UpcomingLifterRowProps extends LiftOrderLine {
   config: Config
-  event: CompetitionEvent
+  event?: CompetitionEvent
 }
 
 
 function UpcomingLifterRow (props: UpcomingLifterRowProps) {
-  return <li class="LiftOrder__upcoming" key={props.lot}>
+  const names = props.name.split(' ')
+  const lastName = names[names.length - 1]
+
+  return <li class={cx({
+    "LiftOrder__upcoming": true,
+    "is-current": props.orderNumber == 0,
+  })} key={props.lot}>
       <span class="LiftOrder__upcomingLot">
         {props.lot}
       </span>
-      <span class="LiftOrder__upcomingName">
-        {props.name}
-      </span>
-      <span class="LiftOrder__upcomingTeam">
-        {props.team}
+      <span class="LiftOrder__upcomingIdentifier">
+        <span class="LiftOrder__upcomingName">
+          {lastName}
+        </span>
+        <span class="LiftOrder__upcomingTeam">
+          {props.team}
+        </span>
       </span>
       <span class="LiftOrder__upcomingAttemptStates">
         {props.attempts.map((a) =>
@@ -189,42 +201,45 @@ function UpcomingLifterRow (props: UpcomingLifterRowProps) {
     </li>
 }
 
-interface CurrentLifterRowProps extends LiftOrderLine {
+interface CurrentLifterProps extends LiftOrderLine {
   config: Config
-  event: CompetitionEvent
+  event?: CompetitionEvent
+  showCurrentLifterBar?: boolean
 }
 
-function CurrentLifterRow (props: CurrentLifterRowProps) {
+function CurrentLifter (props: CurrentLifterProps) {
   let eventDisplay: any = null
 
   if (props.event) {
     eventDisplay = (function() {
       switch (props.event.event_type) {
         case CompetitionEventType.SuccessfulLift:
-          return <span class="LiftOrder__currentEvent is-success">
-            <span class="LiftOrder__currentEventHeading">
-              {"Good lift"}
+          return <span class="CurrentLifter__currentEvent is-success">
+            <span class="CurrentLifter__currentEventInfo">
+              {props.attempts[props.event.data.attempt].weight + ' kg'}
             </span>
-            <span class="LiftOrder__currentEventInfo">
+            <span class="CurrentLifter__currentEventHeading">
+              {"Good lift"}
             </span>
           </span>
         case CompetitionEventType.FailedLift:
-          return <span class="LiftOrder__currentEvent is-fail">
-            <span class="LiftOrder__currentEventHeading">
-              {"No lift"}
+          return <span class="CurrentLifter__currentEvent is-fail">
+            <span class="CurrentLifter__currentEventInfo">
+              {props.attempts[props.event.data.attempt].weight + ' kg'}
             </span>
-            <span class="LiftOrder__currentEventInfo">
+            <span class="CurrentLifter__currentEventHeading">
+              {"No lift"}
             </span>
           </span>
         case CompetitionEventType.DeclarationChange:
-          return <span class="LiftOrder__currentEvent is-declaration">
-            <span class="LiftOrder__currentEventHeading">
-            {"Change"}
-            </span>
-            <span class="LiftOrder__currentEventInfo">
-              {props.event.data.previousWeight}
+          return <span class="CurrentLifter__currentEvent is-declaration">
+            <span class="CurrentLifter__currentEventInfo">
+              {props.event.data.previousWeight + ' kg'}
                 {" to "}
-              {props.event.data.newWeight}
+              {props.event.data.newWeight + ' kg'}
+            </span>
+            <span class="CurrentLifter__currentEventHeading">
+            {"Change"}
             </span>
           </span>
       }
@@ -232,27 +247,31 @@ function CurrentLifterRow (props: CurrentLifterRowProps) {
     })()
   }
 
-  return <p class="LiftOrder__current" key={props.lot}>
-    <h3 class="LiftOrder__currentTitle">{"Current Lifter"}</h3>
-    <span class="LiftOrder__currentContent">
-      <span class="LiftOrder__currentLot">
+  return <p class={cx({
+    "CurrentLifter": true,
+    "is-visible": props.showCurrentLifterBar,
+  })} key={props.lot}>
+    <span class="CurrentLifter__identifier">
+      <span class="CurrentLifter__lot">
         {props.lot}
       </span>
-      <span class="LiftOrder__currentName">
+      <span class="CurrentLifter__name">
         {props.name}
       </span>
-      <span class="LiftOrder__currentTeam">
+      <span class="CurrentLifter__team">
         {props.team}
       </span>
-      <span class="LiftOrder__currentAttemptStates">
+    </span>
+    <span class="CurrentLifter__lifts">
+      <span class="CurrentLifter__attemptStates">
         {props.attempts.map((a) =>
-        <span class={`LiftOrder__currentAttemptState is-${a.status}`}>
+        <span class={`CurrentLifter__attemptState is-${a.status}`}>
           {a.weight}
         </span>
         )}
       </span>
+      {eventDisplay}
     </span>
-    {eventDisplay}
   </p>
 }
 

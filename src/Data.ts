@@ -49,6 +49,7 @@ export enum CompetitionEventType {
   SuccessfulLift,
   FailedLift,
   DeclarationChange,
+  NewLifter,
   PhaseEnd,
 }
 
@@ -89,12 +90,14 @@ export interface CompetitionData {
 
 export interface LiftOrderLine {
   lot: number
+  orderNumber: number
   name: string
   team: string
   scoredWeight?: number
   attemptNumber?: number
   attemptWeight?: number
   attemptProgression?: number
+  attemptJumps?: number[]
   attempts: Array<Attempt>
 }
 
@@ -185,6 +188,21 @@ export function getEventsFromDiff(before: CompetitionData, after: CompetitionDat
     })
   }
 
+  if (before && after) {
+    const beforeOrder = getLifterOrder(before)
+    const afterOrder = getLifterOrder(after)
+
+    if (beforeOrder.length > 0 && afterOrder.length > 0) {
+      if (beforeOrder[0].lot != afterOrder[0].lot) {
+        events.push({
+          event_type: CompetitionEventType.NewLifter,
+          data: afterOrder[0],
+          expiry: timestamp + 10000,
+        })
+      }
+    }
+  }
+
   return events
 }
 
@@ -199,12 +217,14 @@ export function getLifterOrder(data: CompetitionData): LiftOrderLine[] {
       const attempts = line.phases[data.competition_phase]
       let scoredWeight = 0
       let attemptProgression = 0;
+      let attemptJumps: number[] = []
       attempts.forEach((a, ix) => {
         if (a.status == AttemptStatus.Success && a.weight > scoredWeight) {
           scoredWeight = a.weight
         }
-        if (attempts[ix - 1]) {
+        if (a.weight && attempts[ix - 1]) {
           attemptProgression = a.weight - attempts[ix - 1].weight
+          attemptJumps.push(attemptProgression)
         }
       })
       const attemptNumber = attempts.filter((attempt) => attempt.status != AttemptStatus.Nil).length
@@ -214,10 +234,12 @@ export function getLifterOrder(data: CompetitionData): LiftOrderLine[] {
 
       const liftLine: LiftOrderLine = {
         lot: line.lot,
+        orderNumber: 0,
         name: line.name,
         team: line.team,
         attempts: attempts,
         attemptProgression,
+        attemptJumps,
         scoredWeight,
         attemptNumber,
         attemptWeight,
@@ -233,11 +255,17 @@ export function getLifterOrder(data: CompetitionData): LiftOrderLine[] {
     if (a.attemptNumber != b.attemptNumber) {
       return a.attemptNumber - b.attemptNumber
     }
-    if (a.attemptProgression != b.attemptProgression) {
-      return b.attemptProgression - a.attemptProgression
+    for (let jumpIx = a.attemptJumps.length - 1; jumpIx > -1; jumpIx--) {
+      const aJump = a.attemptJumps[jumpIx]
+      const bJump = b.attemptJumps[jumpIx]
+      if (aJump != bJump) {
+        return bJump - aJump
+      }
     }
     return a.lot - b.lot
   })
+
+  lines.forEach((v, ix) => v.orderNumber = ix)
 
   return lines
 }
@@ -247,6 +275,7 @@ export function getPhaseScorecard(data: CompetitionData, override_phase?: string
     .map((lotKey) => data.scorecard[lotKey])
     .map(line => {
       const attempts = line.phases[override_phase || data.competition_phase]
+      const attemptJumps = []
       let scoredWeight = 0
       attempts.forEach((a) => {
         if (a.status == AttemptStatus.Success && a.weight > scoredWeight) {
@@ -259,6 +288,7 @@ export function getPhaseScorecard(data: CompetitionData, override_phase?: string
       )
       const liftLine: LiftOrderLine = {
         lot: line.lot,
+        orderNumber: 0,
         name: line.name,
         team: line.team,
         attempts: attempts,

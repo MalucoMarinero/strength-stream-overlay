@@ -35,7 +35,6 @@ export default function(config: Config): Promise<CompetitionData> {
     return false
   })
 
-
   const competitionData: CompetitionData = {
     clock: "2:00",
     competition_phase,
