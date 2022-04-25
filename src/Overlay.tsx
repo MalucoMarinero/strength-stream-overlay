@@ -80,6 +80,7 @@ function Overlay(props: OverlayProps) {
   let currentLifter: LiftOrderLine = {
     lot: 0,
     orderNumber: 0,
+    liftGroup: 1,
     name: '',
     team: '',
     attempts: [],
@@ -91,6 +92,7 @@ function Overlay(props: OverlayProps) {
     const eventLine = props.competitionData.scorecard[scoringEvent.data.lotKey]
     currentLifter = {
       orderNumber: 0,
+      liftGroup: eventLine.liftGroup,
       lot: eventLine.lot,
       name: eventLine.name,
       team: eventLine.team,
@@ -116,6 +118,8 @@ function Overlay(props: OverlayProps) {
   // const liftOrderTransform = showScoringEvent ? scorecardHeight * -1 : 0
   const liftOrderTransform = 0
   const showCurrentLifterBar = !showBigScorecard && (scoringEvents.length > 0 || newLifterEvents.length > 0 || declarationEvents[currentLifter.lot])
+  let prevRow: LiftOrderLine = null
+  let prevSbRow: TotalScorecardLine = null
 
   return <Fragment>
     <div class={cx({
@@ -128,7 +132,15 @@ function Overlay(props: OverlayProps) {
       }
       <ul class="LiftOrder__sequence">
       {upcomingLifters.map((line) => {
-        return <UpcomingLifterRow key={line.lot} {...line} config={props.config} event={declarationEvents[line.lot]}/>
+        const rowRender = <UpcomingLifterRow
+          key={line.lot}
+          {...line}
+          separator={prevRow && line.liftGroup != prevRow.liftGroup}
+          config={props.config}
+          event={declarationEvents[line.lot]}
+        />
+        prevRow = line
+        return rowRender
         }
       )}
       </ul>
@@ -152,7 +164,14 @@ function Overlay(props: OverlayProps) {
     })}>
       <ol class="BigScorecard__rows">
         {totalScorecard.map((line) => {
-          return <BigScorecardRow key={line.lot} {...line} config={props.config} />
+          const renderRow = <BigScorecardRow
+            key={line.lot}
+            {...line}
+            separator={prevSbRow && line.liftGroup != prevSbRow.liftGroup}
+            config={props.config}
+          />
+          prevSbRow = line
+          return renderRow
         })}
       </ol>
     </div>
@@ -161,6 +180,7 @@ function Overlay(props: OverlayProps) {
 
 interface UpcomingLifterRowProps extends LiftOrderLine {
   config: Config
+  separator?: boolean
   event?: CompetitionEvent
 }
 
@@ -171,6 +191,7 @@ function UpcomingLifterRow (props: UpcomingLifterRowProps) {
 
   return <li class={cx({
     "LiftOrder__upcoming": true,
+    "is-separator": props.separator,
     "is-current": props.orderNumber == 0,
   })} key={props.lot}>
       <span class="LiftOrder__upcomingLot">
@@ -301,11 +322,15 @@ function PhaseScorecardRow (props: PhaseScorecardRowProps) {
 }
 
 interface BigScorecardRowProps extends TotalScorecardLine {
+  separator?: boolean
   config: Config
 }
 
 function BigScorecardRow (props: BigScorecardRowProps) {
-  return <li class="BigScorecard__row" key={props.lot}>
+  return <li class={cx({
+    "BigScorecard__row": true,
+    "is-separator": props.separator,
+  })} key={props.lot}>
       <span class="BigScorecard__rowLot">
         {props.lot}
       </span>

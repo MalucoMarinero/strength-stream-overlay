@@ -11,13 +11,24 @@ export default function(config: Config): Promise<CompetitionData> {
   const sheetName = config.src.target
   const sheet = workbook.Sheets[sheetName]
   let competition_phase = "snatch"
+  let mixedSession = false
 
   let lotHeaderCell: string = null
   let lookingForCurrentMovement = false
+  if (!sheet) {
+    return Promise.resolve({
+      clock: "2:00",
+      competition_phase,
+      scorecard: {}
+    })
+  }
   Object.keys(sheet).some(coords => {
     const cell = sheet[coords]
     if (cell.v == '#') {
       lotHeaderCell = coords
+    }
+    if (cell.v == 'Sex') {
+      mixedSession = true
     }
     if (cell.v == "Current movement = ") {
       lookingForCurrentMovement = true
@@ -44,12 +55,17 @@ export default function(config: Config): Promise<CompetitionData> {
   let startRow = parseInt(lotHeaderCell.split('')[1]) + 1
   let walkRow = startRow
   let endRow = startRow + 20
+  let liftGroup = 1
 
   while (walkRow < endRow) {
     const lot = sheet[`A${walkRow}`].w
+    if (!lot && mixedSession) {
+      liftGroup++
+    }
     if (lot) {
       const line: ScorecardLine = {
         lot: parseInt(lot),
+        liftGroup,
         name: sheet[`B${walkRow}`].w,
         team: sheet[`E${walkRow}`].w,
         phases: {

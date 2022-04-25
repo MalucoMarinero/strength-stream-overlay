@@ -78,6 +78,7 @@ export interface ScorecardLine {
   lot: number
   name: string
   team: string
+  liftGroup: number
   phases: {[key: string]: Array<Attempt>}
 }
 
@@ -93,6 +94,7 @@ export interface LiftOrderLine {
   orderNumber: number
   name: string
   team: string
+  liftGroup: number
   scoredWeight?: number
   attemptNumber?: number
   attemptWeight?: number
@@ -114,6 +116,7 @@ export interface PhaseScorecardLine {
 
 export interface TotalScorecardLine {
   lot: number
+  liftGroup: number
   name: string
   team: string
   total?: number
@@ -235,6 +238,7 @@ export function getLifterOrder(data: CompetitionData): LiftOrderLine[] {
       const liftLine: LiftOrderLine = {
         lot: line.lot,
         orderNumber: 0,
+        liftGroup: line.liftGroup,
         name: line.name,
         team: line.team,
         attempts: attempts,
@@ -249,6 +253,9 @@ export function getLifterOrder(data: CompetitionData): LiftOrderLine[] {
     })
 
   lines.sort((a, b) => {
+    if (a.liftGroup != b.liftGroup) {
+      return a.liftGroup - b.liftGroup
+    }
     if (a.attemptWeight != b.attemptWeight) {
       return a.attemptWeight - b.attemptWeight
     }
@@ -289,6 +296,7 @@ export function getPhaseScorecard(data: CompetitionData, override_phase?: string
       const liftLine: LiftOrderLine = {
         lot: line.lot,
         orderNumber: 0,
+        liftGroup: line.liftGroup,
         name: line.name,
         team: line.team,
         attempts: attempts,
@@ -326,6 +334,7 @@ export function getTotalScorecard(data: CompetitionData): TotalScorecardLine[] {
       })
       const liftLine: TotalScorecardLine = {
         lot: line.lot,
+        liftGroup: line.liftGroup,
         name: line.name,
         team: line.team,
         phases: line.phases,
@@ -336,6 +345,9 @@ export function getTotalScorecard(data: CompetitionData): TotalScorecardLine[] {
     })
 
   lines.sort((a, b) => {
+    if (a.liftGroup != b.liftGroup) {
+      return a.liftGroup - b.liftGroup
+    }
     return b.total - a.total
   })
 

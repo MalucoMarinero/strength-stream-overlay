@@ -1,6 +1,6 @@
 {
   "name": "strength-stream-overlay",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "build/StrengthStreamServer.pkg.js",
   "bin": "build/StrengthStreamServer.pkg.js",
