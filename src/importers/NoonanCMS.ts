@@ -59,7 +59,8 @@ export default function(config: Config): Promise<CompetitionData> {
 
   while (walkRow < endRow) {
     const lot = sheet[`A${walkRow}`].w
-    if (!lot && mixedSession) {
+    const nameField = sheet[`B${walkRow}`].w
+    if (!lot && !nameField && mixedSession) {
       liftGroup++
     }
     if (lot) {

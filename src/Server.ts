@@ -77,17 +77,22 @@ app.post('/api/config/src', (req, res) => {
 })
 
 function updateCompetitionData () {
-  if (
-    config.src.type == DataSources.NoonanCMS &&
-    config.src.path && config.src.target
-  ) {
-    ImportNoonanCMS(config).then((data) => {
-      updateDataAndEvents(data)
-      setTimeout(updateCompetitionData, 1000)
-    })
-  } else {
-    status.state = StreamState.NoSource
-    setTimeout(updateCompetitionData, 1000)
+  try {
+    if (
+      config.src.type == DataSources.NoonanCMS &&
+      config.src.path && config.src.target
+    ) {
+      ImportNoonanCMS(config).then((data) => {
+        updateDataAndEvents(data)
+      }).catch((e: Error) => {
+        console.error(e)
+      })
+    } else {
+      status.state = StreamState.NoSource
+    }
+  } catch (e) {
+    console.error(e);
+
   }
 }
 
@@ -99,7 +104,7 @@ function updateDataAndEvents(newData: CompetitionData) {
   currentCompetitionData = newData
 }
 
-updateCompetitionData()
+setInterval(updateCompetitionData, 1000)
 
 function getLatestServerState (): CompleteServerState {
   return {

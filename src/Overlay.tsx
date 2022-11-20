@@ -24,6 +24,7 @@ const overlayElem = document.getElementById('overlay')
 let lastData: CompetitionData = null
 let events: CompetitionEvent[] = []
 
+let failCount = 0
 
 function renderCycle() {
   collector()
@@ -33,21 +34,42 @@ function renderCycle() {
         competitionData={serverState.data.competition}
         events={serverState.data.events}
       />, overlayElem)
+      console.log("Update success")
+      failCount = 0 
+      return serverState
+    }).catch(error => {
+      failCount++
+      console.log("Update failed - count:", failCount)
 
-      setTimeout(renderCycle, 500)
+      if (failCount > 2 * 30) {
+        preactRender(<Overlay
+          error={error}
+        />, overlayElem)
+      }
     })
 }
 
 renderCycle()
+setInterval(renderCycle, 500);
 
 interface OverlayProps {
-  competitionData: CompetitionData
-  config: Config
+  competitionData?: CompetitionData
+  config?: Config
   events?: CompetitionEvent[]
+  error?: Error
 }
 
-
 function Overlay(props: OverlayProps) {
+  if (props.error) {
+    return <Fragment>
+        <div class={cx({
+        "ErrorDisplay": true,
+      })}>
+        <p class="ErrorDisplay__text">{props.error.message}</p>
+      </div>
+    </Fragment>
+
+  }
   const liftOrder = getLifterOrder(props.competitionData)
   const totalScorecard = getTotalScorecard(props.competitionData)
   const scoringEvents = props.events.filter((e) =>
@@ -126,7 +148,7 @@ function Overlay(props: OverlayProps) {
       "LiftOrder": true,
       "is-visible": showUpcoming,
     })} style={{
-    }}>
+    }} key="lift-order">
       {upcomingLifters.length > 0 &&
         <h3 class="LiftOrder__title">{"Upcoming"}</h3>
       }
@@ -145,13 +167,13 @@ function Overlay(props: OverlayProps) {
       )}
       </ul>
     </div>
-    <CurrentLifter {...currentLifter} config={props.config} event={scoringEvent || newLifterEvent || declarationEvents[currentLifter.lot]} showCurrentLifterBar={showCurrentLifterBar as boolean} />
+    <CurrentLifter key="currentLifter" {...currentLifter} config={props.config} event={scoringEvent || newLifterEvent || declarationEvents[currentLifter.lot]} showCurrentLifterBar={showCurrentLifterBar as boolean} />
     <div class={cx({
       "PhaseScorecard": true,
       "is-visible": !showBigScorecard,
     })} style={{
       transform: `translateY(${liftOrderTransform}px)`
-    }}>
+    }} key="phase-scoreboard">
       <ol class="PhaseScorecard__rows">
         {phaseScorecard.map((line) => {
           return <PhaseScorecardRow key={line.lot} {...line} config={props.config} />
@@ -161,7 +183,7 @@ function Overlay(props: OverlayProps) {
     <div class={cx({
       "BigScorecard": true,
       "is-visible": showBigScorecard,
-    })}>
+    })} key="big-scoreboard">
       <ol class="BigScorecard__rows">
         {totalScorecard.map((line) => {
           const renderRow = <BigScorecardRow
